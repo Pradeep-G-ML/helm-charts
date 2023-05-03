@@ -52,9 +52,10 @@ prometheus:
 replicaCount: 1
 schemaGenerator:
   enabled: true
-  image: snappyflowml/schema-generator
-  imagePullPolicy: IfNotPresent
-  imageTag: '14'
+  image:
+    pullPolicy: IfNotPresent
+    repository: snappyflowml/schema-generator
+    tag: '14'
   intervalInMin: 10
   targets:
   - enabled: true

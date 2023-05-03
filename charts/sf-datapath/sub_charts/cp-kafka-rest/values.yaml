@@ -41,9 +41,10 @@ https:
   truststoreFile: rest.https.truststore.jks
   truststorePassword: test1234
 httpsServicePort: 8081
-image: snappyflowml/sf-kafka-rest
-imagePullPolicy: IfNotPresent
-imageTag: '6'
+image:
+  pullPolicy: IfNotPresent
+  repository: snappyflowml/sf-kafka-rest
+  tag: '6'
 jmx:
   port: 5555
 livenessProbe:
