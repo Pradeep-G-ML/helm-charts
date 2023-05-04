@@ -1,0 +1,2012 @@
+---
+# Source: sf-datapath/charts/archival-kafka-connect/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-archival-kafka-connect-kafka-log
+  labels:
+    app: archival-kafka-connect
+    chart: archival-kafka-connect-0.1.0
+    release: release-name
+    heritage: Helm
+data:
+  connect-log4j.properties: |+
+    log4j.rootLogger=INFO, console
+    log4j.logger.org.maplelabs.smt=INFO, console
+    log4j.additivity.org.maplelabs.smt=false
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.Target=System.out
+    log4j.appender.console.immediateFlush=true
+    log4j.appender.console.encoding=UTF-8
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.conversionPattern=[%d] %p %m (%c)%n
+    log4j.appender.console.Threshold=DEBUG
+    log4j.logger.org.apache.zookeeper=ERROR
+    log4j.logger.org.I0Itec.zkclient=ERROR
+    log4j.logger.org.reflections=ERROR
+    log4j.logger.org.eclipse.jetty=ERROR
+    log4j.logger.kafka=ERROR
+    log4j.logger.org.apache.kafka.clients.admin.AdminClientConfig=ERROR
+---
+# Source: sf-datapath/charts/archival-kafka-connect/templates/jmx-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-archival-kafka-connect-jmx-configmap
+  labels:
+    app: archival-kafka-connect
+    chart: archival-kafka-connect-0.1.0
+    release: release-name
+    heritage: Helm
+data:
+  jmx-kafka-connect-prometheus.yml: |+
+    startDelaySeconds: 90
+    jmxUrl: service:jmx:rmi:///jndi/rmi://localhost:5555/jmxrmi
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    ssl: false
+    whitelistObjectNames:
+    - "java.lang:*"
+    - "java.nio:*"
+    - "kafka.connect:type=connect-worker-metrics,*"
+    - "kafka.connect:type=connect-worker-rebalance-metrics,*"
+    - "kafka.connect:type=task-error-metrics,*"
+    - "kafka.connect:type=connector-task-metrics,*"
+    - "kafka.connect:type=source-task-metrics,*"
+    - "kafka.connect:type=sink-task-metrics,*"
+    - "kafka.connect:type=connect-metrics,*"
+    - "kafka.connect:type=connect-node-metrics,*"
+    - "kafka.connect:type=connect-coordinator-metrics,*"
+    - "kafka.producer:type=producer-metrics,*"
+    - "kafka.producer:type=producer-node-metrics,*"
+    - "kafka.producer:type=producer-topic-metrics,*"
+    - "kafka.consumer:type=consumer-metrics,*"
+    - "kafka.consumer:type=consumer-fetch-manager-metrics,*"
+    - "kafka.consumer:type=consumer-node-metrics,*"
+    - "kafka.consumer:type=consumer-coordinator-metrics,*"
+    rules:
+    - pattern: "kafka.producer<type=producer-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.producer<type=producer-node-metrics, client-id=(.+), node-id=node-(\\d)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_node_$3
+      labels:
+        clientID: "$1"
+        nodeID: "$2"
+        clientID_nodeID: "$1-$2"
+    - pattern: "kafka.producer<type=producer-topic-metrics, client-id=(.+), topic=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_topic_$3
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        clientID_topic: "$1-$2"
+    - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+), partition=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_topic_partn_$4
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        partition: "$3"
+        clientID_topic_partition: "$1-$2-$3"
+    - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_topic_$3
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        clientID_topic: "$1-$2"
+    - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.consumer<type=consumer-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.consumer<type=consumer-node-metrics, client-id=(.+), node-id=node-(\\d)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_node_$3
+      labels:
+        clientID: "$1"
+        nodeID: "$2"
+        clientID_nodeID: "$1-$2"
+    - pattern: "kafka.consumer<type=consumer-coordinator-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_coord_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.connect<type=connect-worker-metrics, connector=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_connect_worker_connector_$2
+      labels:
+        connector: "$1"
+    - pattern: "kafka.connect<type=connect-worker-metrics><>(.+)\\:"
+      cache: true
+      name: kafka_connect_worker_$1
+    - pattern: "kafka.connect<type=connect-worker-rebalance-metrics><>(.+)\\:"
+      cache: true
+      name: kafka_connect_worker_rebalance_$1
+    - pattern: "kafka.connect<type=task-error-metrics, connector=(.+), task=(\\d)+><>(.+)\\:"
+      cache: true
+      name: kafka_connect_task_error_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+        connector_task: "$1_$2"
+    - pattern: "kafka.connect<type=connector-task-metrics, connector=(.+), task=(\\d)+><>(.+)\\:"
+      cache: true
+      name: kafka_connect_task_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+        connector_task: "$1_$2"
+    - pattern: "kafka.connect<type=sink-task-metrics, connector=(.+), task=(\\d)+><>(.+)\\:"
+      cache: true
+      name: kafka_connect_sink_task_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+        connector_task: "$1_$2"
+    - pattern: "kafka.connect<type=source-task-metrics, connector=(.+), task=(\\d)+><>(.+)\\:"
+      cache: true
+      name: kafka_connect_source_task_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+        connector_task: "$1_$2"
+    - pattern: "kafka.connect<type=connect-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_connect_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.connect<type=connect-coordinator-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_connect_client_coord_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.connect<type=connect-node-metrics, client-id=(.+), node-id=node-(\\d)><>(.+)\\:"
+      cache: true
+      name: kafka_connect_client_node_$3
+      labels:
+        clientID: "$1"
+        nodeID: "$2"
+        clientID_nodeID: "$1-$2"
+    - pattern: java.lang<type=(.+), name=(.+)><(.+)>(\w+)
+      name: java_lang_$1_$4_$3_$2
+      cache: true
+    - pattern: java.lang<name=(.+), type=(.+)><(.+)>(\w+)
+      name: java_lang_$2_$4_$3_$1
+      cache: true
+    - pattern: java.lang<type=(.+), name=(.+)><>(\w+)
+      name: java_lang_$1_$3_$2
+      cache: true
+    - pattern: java.lang<name=(.+), type=(.+)><>(\w+)
+      name: java_lang_$2_$3_$1
+      cache: true
+    - pattern: java.lang<type=(.*)>
+      cache: true
+    - pattern: java.nio<type=(.+), name=(.+)><>(\w+)
+      name: java_nio_$1_$3_$2
+      cache: true
+---
+# Source: sf-datapath/charts/authenticator/templates/configmap.yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: release-name-authenticator
+  namespace: default
+data:
+  config.json: |-
+    {
+      "admin": {
+        "profileKey": "admin",
+        "userName": "admin",
+        "password": "admin"
+      },
+      "db": {
+        "name":  "archival",
+        "user":  "archive",
+        "password": "archive123",
+        "host": "release-name-postgresql",
+        "port": 5432,
+        "max_open_connections": 2,
+        "max_idle_connections": 1
+      },
+      "signingKey": "mysecretkey",
+      "serverPort": ":5006"
+    }
+---
+# Source: sf-datapath/charts/cp-kafka-rest/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-cp-kafka-rest-kafka-log
+  labels:
+    app: cp-kafka-rest
+    chart: cp-kafka-rest-0.1.2
+    release: release-name
+    heritage: Helm
+data:
+  connect-log4j.properties: |+
+    log4j.rootLogger=INFO, console
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.Target=System.out
+    log4j.appender.console.immediateFlush=true
+    log4j.appender.console.encoding=UTF-8
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.conversionPattern=[%d] %p %m (%c)%n
+    log4j.appender.console.Threshold=DEBUG
+    log4j.logger.org.apache.zookeeper=ERROR
+    log4j.logger.org.I0Itec.zkclient=ERROR
+    log4j.logger.org.reflections=ERROR
+    log4j.logger.io.confluent.rest-utils.requests=WARN
+---
+# Source: sf-datapath/charts/cp-kafka-rest/templates/jmx-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-cp-kafka-rest-jmx-configmap
+  labels:
+    app: cp-kafka-rest
+    chart: cp-kafka-rest-0.1.2
+    release: release-name
+    heritage: Helm
+data:
+  jmx-kafka-rest-prometheus.yml: |+
+    startDelaySeconds: 120
+    jmxUrl: service:jmx:rmi:///jndi/rmi://localhost:5555/jmxrmi
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    ssl: false
+    whitelistObjectNames:
+    - "java.lang:*"
+    - "java.nio:*"
+    - "org.eclipse.jetty.util.thread:*"
+    - "kafka.rest:type=jersey-metrics,*"
+    - "kafka.rest:type=jetty-metrics,*"
+    - "kafka.rest:type=producer-metrics,*"
+    - "kafka.rest:type=producer-node-metrics,*"
+    - "kafka.rest:type=producer-topic-metrics,*"
+    - "kafka.rest:type=consumer-metrics,*"
+    - "kafka.rest:type=consumer-fetch-manager-metrics,*"
+    - "kafka.rest:type=consumer-node-metrics,*"
+    - "kafka.rest:type=consumer-coordinator-metrics,*"
+    rules:
+    - pattern: "kafka.rest<type=producer-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.rest<type=producer-node-metrics, client-id=(.+), node-id=node-(\\d)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_node_$3
+      labels:
+        clientID: "$1"
+        nodeID: "$2"
+        clientID_nodeID: "$1-$2"
+    - pattern: "kafka.rest<type=producer-topic-metrics, client-id=(.+), topic=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_topic_$3
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        clientID_topic: "$1-$2"
+    - pattern: "kafka.rest<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+), partition=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_topic_partn_$4
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        partition: "$3"
+        clientID_topic_partition: "$1-$2-$3"
+    - pattern: "kafka.rest<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_topic_$3
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        clientID_topic: "$1-$2"
+    - pattern: "kafka.rest<type=consumer-fetch-manager-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.rest<type=consumer-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.rest<type=consumer-node-metrics, client-id=(.+), node-id=node-(\\d)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_node_$3
+      labels:
+        clientID: "$1"
+        nodeID: "$2"
+        clientID_nodeID: "$1-$2"
+    - pattern: "kafka.rest<type=consumer-coordinator-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_coord_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.rest<type=jersey-metrics><>(.+?)\\.(.+)\\+v2\\.([^\\.]+)\\:"
+      cache: true
+      name: kafka_rest_api_$3
+      labels:
+        apiVersion: "v2"
+        apiGroup: "$1"
+        api: "$2"
+        apiGroup_api: "$1-$2"
+    - pattern: "kafka.rest<type=jersey-metrics><>v3\\.([^\\.]+)\\.(.+?)\\.([^\\.]+)\\:"
+      cache: true
+      name: kafka_rest_api_$3
+      labels:
+        apiVersion: "v3"
+        apiGroup: "$1"
+        api: "$2"
+        apiGroup_api: "$1-$2"
+    - pattern: "kafka.rest<type=jersey-metrics, http_status_code=(.+)><>(.+?)\\.(.+)\\+v2\\.([^\\.]+)\\:"
+      cache: true
+      name: kafka_rest_api_$4
+      labels:
+        apiVersion: "v2"
+        apiGroup: "$2"
+        api: "$3"
+        status-code: "$1"
+        apiGroup_api: "$2-$3"
+    - pattern: "kafka.rest<type=jersey-metrics, http_status_code=(.+)><>v3\\.([^\\.]+)\\.(.+?)\\.([^\\.]+)\\:"
+      cache: true
+      name: kafka_rest_api_$4
+      labels:
+        apiVersion: "v3"
+        apiGroup: "$2"
+        api: "$3"
+        status-code: "$1"
+        apiGroup_api: "$2-$3"
+    - pattern: kafka.rest<type=jersey-metrics>
+      cache: true
+    - pattern: kafka.rest<type=jetty-metrics>
+      cache: true
+    - pattern: org.eclipse.jetty.util.thread<type=(.+), id=(.+)><>([^:]+)
+      cache: true
+      name: kafka_rest_jetty_$1_$3
+      labels:
+        id: "$2"
+    - pattern: java.lang<type=(.+), name=(.+)><(.+)>(\w+)
+      name: java_lang_$1_$4_$3_$2
+      cache: true
+    - pattern: java.lang<name=(.+), type=(.+)><(.+)>(\w+)
+      name: java_lang_$2_$4_$3_$1
+      cache: true
+    - pattern: java.lang<type=(.+), name=(.+)><>(\w+)
+      name: java_lang_$1_$3_$2
+      cache: true
+    - pattern: java.lang<name=(.+), type=(.+)><>(\w+)
+      name: java_lang_$2_$3_$1
+      cache: true
+    - pattern: java.lang<type=(.*)>
+      cache: true
+    - pattern: java.nio<type=(.+), name=(.+)><>(\w+)
+      name: java_nio_$1_$3_$2
+      cache: true
+---
+# Source: sf-datapath/charts/cp-schema-registry/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-cp-schema-registry-kafka-log
+  labels:
+    app: cp-schema-registry
+    chart: cp-schema-registry-0.1.1
+    release: release-name
+    heritage: Helm
+data:
+  connect-log4j.properties: |+
+    log4j.rootLogger=INFO, console
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.Target=System.out
+    log4j.appender.console.immediateFlush=true
+    log4j.appender.console.encoding=UTF-8
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.conversionPattern=[%d] %p %m (%c)%n
+    log4j.appender.console.Threshold=DEBUG
+    log4j.logger.org.apache.zookeeper=ERROR
+    log4j.logger.org.I0Itec.zkclient=ERROR
+    log4j.logger.org.reflections=ERROR
+---
+# Source: sf-datapath/charts/cp-schema-registry/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-cp-schema-registry-schema-generator-configmap
+  labels:
+    app: cp-schema-registry
+    chart: cp-schema-registry-0.1.1
+    release: release-name
+    heritage: Helm
+data:
+  config.yaml: |+
+    intervalInMin: 10
+    db:
+      name:  "archival"
+      user:  "archive"
+      password: "archive123"
+      host: 
+      port: 5432
+    targets:
+    - enabled: true
+      name: schema-registry
+      url: "http://archival-ingest-controller/ingest/schema-registry"
+---
+# Source: sf-datapath/charts/es-kafka-connect/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-es-kafka-connect-kafka-log
+  labels:
+    app: es-kafka-connect
+    chart: es-kafka-connect-0.1.2
+    release: release-name
+    heritage: Helm
+data:
+  connect-log4j.properties: |+
+    log4j.rootLogger=INFO, console
+    log4j.logger.org.maplelabs.smt=INFO, console
+    log4j.additivity.org.maplelabs.smt=false
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.Target=System.out
+    log4j.appender.console.immediateFlush=true
+    log4j.appender.console.encoding=UTF-8
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.conversionPattern=[%d] %p %m (%c)%n
+    log4j.appender.console.Threshold=DEBUG
+    log4j.logger.org.apache.zookeeper=ERROR
+    log4j.logger.org.I0Itec.zkclient=ERROR
+    log4j.logger.org.reflections=ERROR
+    log4j.logger.org.eclipse.jetty=ERROR
+    log4j.logger.kafka=ERROR
+    log4j.logger.org.apache.kafka.clients.admin.AdminClientConfig=ERROR
+---
+# Source: sf-datapath/charts/es-kafka-connect/templates/jmx-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-es-kafka-connect-jmx-configmap
+  labels:
+    app: es-kafka-connect
+    chart: es-kafka-connect-0.1.2
+    release: release-name
+    heritage: Helm
+data:
+  jmx-kafka-connect-prometheus.yml: |+
+    startDelaySeconds: 90
+    jmxUrl: service:jmx:rmi:///jndi/rmi://localhost:5555/jmxrmi
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    ssl: false
+    whitelistObjectNames:
+    - "java.lang:*"
+    - "java.nio:*"
+    - "kafka.connect:type=connect-worker-metrics,*"
+    - "kafka.connect:type=connect-worker-rebalance-metrics,*"
+    - "kafka.connect:type=task-error-metrics,*"
+    - "kafka.connect:type=connector-task-metrics,*"
+    - "kafka.connect:type=source-task-metrics,*"
+    - "kafka.connect:type=sink-task-metrics,*"
+    - "kafka.connect:type=connect-metrics,*"
+    - "kafka.connect:type=connect-node-metrics,*"
+    - "kafka.connect:type=connect-coordinator-metrics,*"
+    - "kafka.producer:type=producer-metrics,*"
+    - "kafka.producer:type=producer-node-metrics,*"
+    - "kafka.producer:type=producer-topic-metrics,*"
+    - "kafka.consumer:type=consumer-metrics,*"
+    - "kafka.consumer:type=consumer-fetch-manager-metrics,*"
+    - "kafka.consumer:type=consumer-node-metrics,*"
+    - "kafka.consumer:type=consumer-coordinator-metrics,*"
+    rules:
+    - pattern: "kafka.producer<type=producer-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.producer<type=producer-node-metrics, client-id=(.+), node-id=node-(\\d)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_node_$3
+      labels:
+        clientID: "$1"
+        nodeID: "$2"
+        clientID_nodeID: "$1-$2"
+    - pattern: "kafka.producer<type=producer-topic-metrics, client-id=(.+), topic=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_producer_client_topic_$3
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        clientID_topic: "$1-$2"
+    - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+), partition=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_topic_partn_$4
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        partition: "$3"
+        clientID_topic_partition: "$1-$2-$3"
+    - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+), topic=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_topic_$3
+      labels:
+        clientID: "$1"
+        topic: "$2"
+        clientID_topic: "$1-$2"
+    - pattern: "kafka.consumer<type=consumer-fetch-manager-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.consumer<type=consumer-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.consumer<type=consumer-node-metrics, client-id=(.+), node-id=node-(\\d)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_node_$3
+      labels:
+        clientID: "$1"
+        nodeID: "$2"
+        clientID_nodeID: "$1-$2"
+    - pattern: "kafka.consumer<type=consumer-coordinator-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_consumer_client_coord_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.connect<type=connect-worker-metrics, connector=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_connect_worker_connector_$2
+      labels:
+        connector: "$1"
+    - pattern: "kafka.connect<type=connect-worker-metrics><>(.+)\\:"
+      cache: true
+      name: kafka_connect_worker_$1
+    - pattern: "kafka.connect<type=connect-worker-rebalance-metrics><>(.+)\\:"
+      cache: true
+      name: kafka_connect_worker_rebalance_$1
+    - pattern: "kafka.connect<type=task-error-metrics, connector=(.+), task=(\\d)+><>(.+)\\:"
+      cache: true
+      name: kafka_connect_task_error_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+        connector_task: "$1_$2"
+    - pattern: "kafka.connect<type=connector-task-metrics, connector=(.+), task=(\\d)+><>(.+)\\:"
+      cache: true
+      name: kafka_connect_task_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+        connector_task: "$1_$2"
+    - pattern: "kafka.connect<type=sink-task-metrics, connector=(.+), task=(\\d)+><>(.+)\\:"
+      cache: true
+      name: kafka_connect_sink_task_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+        connector_task: "$1_$2"
+    - pattern: "kafka.connect<type=source-task-metrics, connector=(.+), task=(\\d)+><>(.+)\\:"
+      cache: true
+      name: kafka_connect_source_task_$3
+      labels:
+        connector: "$1"
+        task: "$2"
+        connector_task: "$1_$2"
+    - pattern: "kafka.connect<type=connect-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_connect_client_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.connect<type=connect-coordinator-metrics, client-id=(.+)><>(.+)\\:"
+      cache: true
+      name: kafka_connect_client_coord_$2
+      labels:
+        clientID: "$1"
+    - pattern: "kafka.connect<type=connect-node-metrics, client-id=(.+), node-id=node-(\\d)><>(.+)\\:"
+      cache: true
+      name: kafka_connect_client_node_$3
+      labels:
+        clientID: "$1"
+        nodeID: "$2"
+        clientID_nodeID: "$1-$2"
+    - pattern: java.lang<type=(.+), name=(.+)><(.+)>(\w+)
+      name: java_lang_$1_$4_$3_$2
+      cache: true
+    - pattern: java.lang<name=(.+), type=(.+)><(.+)>(\w+)
+      name: java_lang_$2_$4_$3_$1
+      cache: true
+    - pattern: java.lang<type=(.+), name=(.+)><>(\w+)
+      name: java_lang_$1_$3_$2
+      cache: true
+    - pattern: java.lang<name=(.+), type=(.+)><>(\w+)
+      name: java_lang_$2_$3_$1
+      cache: true
+    - pattern: java.lang<type=(.*)>
+      cache: true
+    - pattern: java.nio<type=(.+), name=(.+)><>(\w+)
+      name: java_nio_$1_$3_$2
+      cache: true
+---
+# Source: sf-datapath/charts/sfk-interface/templates/configmap.yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: release-name-sfk-interface-config
+    namespace: default
+data:
+    config.json: |-
+        {
+            "kafka": {
+                "brokers": "localhost:9092,localhost1:9092",
+                "rest_proxy": "http://release-name-cp-kafka-rest:8082",
+                "rest_auth": "http://release-name-authenticator",
+                "connect": "http://release-name-es-kafka-connect:8083"
+            },
+            "agent_ep": "https://127.0.0.1:443",
+            "signature_and_kafka_apis": "http://release-name-signatures-and-kafka-apis",
+            "cluster_byte_rate_quota": 1157400,
+            "prometheus_endpoint": "http://pod-autoscaling-prometheus-server.default",
+            "prometheus_auth": "snappyflow",
+            "sys_rsvd_cluster_byte_rate_quota_pcnt": 0,
+            "db": {
+                "name":  "archival",
+                "user":  "archive",
+                "password": "archive123",
+                "host": "release-name-postgresql",
+                "port": 5432,
+                "max_open_connections": 2,
+                "max_idle_connections": 1
+            },
+            "max_tasks_per_topic": 3,
+            "topic_type_details": [{"num_partitions":3,"replication_factor":2,"retention_ms":"86400000","type":"log"},{"num_partitions":3,"replication_factor":2,"retention_ms":"86400000","type":"metric"},{"num_partitions":3,"replication_factor":2,"retention_ms":"3600000","type":"control"},{"num_partitions":3,"replication_factor":2,"retention_ms":"3600000","type":"trace"},{"num_partitions":3,"replication_factor":2,"retention_ms":"3600000","type":"profile"}],
+            "quotas_enabled": true
+        }
+    es_sink_defaults.json: |-
+        {
+            "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+            "auto.create.indices.at.start": "false",
+            "errors.tolerance": "all",
+            "drop.invalid.message": "true",
+            "behavior.on.malformed.documents": "warn",
+            "behavior.on.null.values": "ignore",
+            "max.buffered.records": "5000",
+            "retry.backoff.ms": "3000",
+            "max.retries": "3",
+            "connection.timeout.ms": "5000",
+            "read.timeout.ms": "30000",
+            "flush.timeout.ms": "150000",
+            "batch.size": "5000",
+            "max.in.flight.requests": "1",
+            "linger.ms": "1000",
+            "schema.ignore": "true",
+            "value.converter.schemas.enable": "false",
+            "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+            "transforms": "filterandrouter,insertsignature",
+            "transforms.throttle.type": "apm.kafka.connect.transforms.Throttle",
+            "transforms.filterandrouter.type": "apm.kafka.connect.transforms.APMFilterAndRouter",
+            "transforms.filterandrouter.samplingPeriodSeconds": 300,
+            "transforms.insertsignature.type": "com.signature.InsertSignature$Value",
+            "transforms.insertsignature.connectorname.field": "elastic-search"
+        }
+---
+# Source: sf-datapath/charts/signatures-and-kafka-apis/templates/configmap.yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: release-name-signatures-and-kafka-apis
+  namespace: default
+data:
+  config.json: |-
+    {
+      "db": {
+        "name":  "archival",
+        "user":  "archive",
+        "password": "archive123",
+        "host": "release-name-postgresql",
+        "port": 5432
+      },
+      "default-patterns": "upstream timed out,upstream server temporarily disabled while reading response header from upstream,upstream server temporarily disabled while connecting to upstream,upstream prematurely closed connection while reading response header from upstream,session opened for user,session closed for user,possible break,invalid user,dhcprequest,dhcpack",
+      "set-default-patterns": false,
+      "registered-urls": ["http://archival-ingest-controller/ingest/datasets/updatepatterns","http://release-name-sfk-interface/signpatterns"
+      ]
+    }
+---
+# Source: sf-datapath/templates/system-migration.yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: release-name-system-migration-config
+  namespace: default
+data:
+  config.json: |-
+    {
+      "db": {
+        "name": "archival",
+        "user": "archive",
+        "password": "archive123",
+        "host": "",
+        "port": 5432
+      },
+      "kafka_brokers": "localhost:9092,localhost1:9092",
+      "es_kafka_connect_url": "http://release-name-es-kafka-connect:8083",
+      "archival_kafka_connect_url": "http://release-name-archival-kafka-connect:8083",
+      "signature_and_kafka_apis": "http://release-name-signatures-and-kafka-apis",
+      "kafka_rest_auth_url": "http://release-name-authenticator",
+      "cluster_byte_rate_quota": 1157400,
+      "sys_rsvd_cluster_byte_rate_quota_pcnt": 0,
+      "max_tasks_per_topic": 3,
+      "topic_type_details": [{"num_partitions":3,"replication_factor":2,"retention_ms":"86400000","type":"log"},{"num_partitions":3,"replication_factor":2,"retention_ms":"86400000","type":"metric"},{"num_partitions":3,"replication_factor":2,"retention_ms":"3600000","type":"control"},{"num_partitions":3,"replication_factor":2,"retention_ms":"3600000","type":"trace"},{"num_partitions":3,"replication_factor":2,"retention_ms":"3600000","type":"profile"}],
+      "quotas_enabled": true
+    }
+---
+# Source: sf-datapath/charts/archival-kafka-connect/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-archival-kafka-connect
+  labels:
+    app: archival-kafka-connect
+    chart: archival-kafka-connect-0.1.0
+    release: release-name
+    heritage: Helm
+spec:
+  ports:
+    - name: arch-connect
+      port: 8083
+    - port: 5556
+      name: jmx-exporter
+  selector:
+    app: archival-kafka-connect
+    release: release-name
+---
+# Source: sf-datapath/charts/authenticator/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-authenticator
+  namespace: default
+  labels:
+    app.kubernetes.io/name: authenticator
+    helm.sh/chart: authenticator-0.1.1
+    app.kubernetes.io/instance: release-name
+    release: release-name
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ports:
+  - port: 80
+    targetPort: 5006
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: authenticator
+    app.kubernetes.io/instance: release-name
+---
+# Source: sf-datapath/charts/cp-kafka-rest/templates/external-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cp-kafka-rest-external
+  labels:
+    app: cp-kafka-rest
+    chart: cp-kafka-rest-0.1.2
+    release: release-name
+    heritage: Helm
+spec:
+  selector:
+    app: cp-kafka-rest
+    release: release-name
+  type: NodePort
+  externalTrafficPolicy: Cluster
+  
+  ports:
+    
+    - name: rest-proxy
+      port: 8082
+      nodePort: 32002
+---
+# Source: sf-datapath/charts/cp-kafka-rest/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cp-kafka-rest
+  labels:
+    app: cp-kafka-rest
+    chart: cp-kafka-rest-0.1.2
+    release: release-name
+    heritage: Helm
+spec:
+  ports:
+    - name: rest-proxy
+      port: 8082
+    - port: 5556
+      name: jmx-exporter
+  selector:
+    app: cp-kafka-rest
+    release: release-name
+---
+# Source: sf-datapath/charts/cp-schema-registry/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-cp-schema-registry
+  labels:
+    app: cp-schema-registry
+    chart: cp-schema-registry-0.1.1
+    release: release-name
+    heritage: Helm
+spec:
+  ports:
+    - name: schema-registry
+      port: 8081
+  selector:
+    app: cp-schema-registry
+    release: release-name
+---
+# Source: sf-datapath/charts/es-kafka-connect/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-es-kafka-connect
+  labels:
+    app: es-kafka-connect
+    chart: es-kafka-connect-0.1.2
+    release: release-name
+    heritage: Helm
+spec:
+  ports:
+    - name: es-connect
+      port: 8083
+    - port: 5556
+      name: jmx-exporter
+  selector:
+    app: es-kafka-connect
+    release: release-name
+---
+# Source: sf-datapath/charts/sfk-interface/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-sfk-interface
+  labels:
+    helm.sh/chart: sfk-interface-0.1.1
+    release: release-name
+    app.kubernetes.io/name: sfk-interface
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: sfk-interface
+    app.kubernetes.io/instance: release-name
+---
+# Source: sf-datapath/charts/signatures-and-kafka-apis/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-signatures-and-kafka-apis
+  namespace: default
+  labels:
+    app.kubernetes.io/name: signatures-and-kafka-apis
+    helm.sh/chart: signatures-and-kafka-apis-0.1.1
+    app.kubernetes.io/instance: release-name
+    release: release-name
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  ports:
+  - port: 80
+    targetPort: 8888
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: signatures-and-kafka-apis
+    app.kubernetes.io/instance: release-name
+---
+# Source: sf-datapath/charts/authenticator/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-authenticator
+  namespace: default
+  labels:
+    app.kubernetes.io/name: authenticator
+    helm.sh/chart: authenticator-0.1.1
+    app.kubernetes.io/instance: release-name
+    release: release-name
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authenticator
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      annotations:
+        checksum/config: f7ff9d64ac07b1a1de73ab9386846278d0f5b95243cde1a94f8d3f750ad70724
+      labels:
+        app.kubernetes.io/name: authenticator
+        app.kubernetes.io/instance: release-name
+        release: release-name
+        snappyflow/projectname: snappyflow-app
+        snappyflow/appname: sf-data-path
+    spec:
+      imagePullSecrets:
+        - name: xxxx
+      initContainers:
+        - name: db-ready
+          image: "bitnami/postgresql:11.5.0-debian-9-r34"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - "until pg_isready -d postgresql://'archive':'archive123'@'release-name-postgresql':5432/'archival'; do sleep 3; done"
+      containers:
+        - name: authenticator
+          image: "snappyflowml/authenticator:8"
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - name: config-volume
+            mountPath: /etc/conf
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+      volumes:
+        - name: config-volume
+          configMap:
+            name: release-name-authenticator
+---
+# Source: sf-datapath/charts/cp-kafka-rest/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cp-kafka-rest
+  labels:
+    app: cp-kafka-rest
+    chart: cp-kafka-rest-0.1.2
+    release: release-name
+    heritage: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cp-kafka-rest
+      release: release-name
+  template:
+    metadata:
+      labels:
+        app: cp-kafka-rest
+        release: release-name
+        snappyflow/projectname: snappyflow-app
+        snappyflow/appname: sf-data-path
+        snappyflow/component: kafka
+      annotations:
+        checksum/config: a1c82751e176ae1829d66f14f46939e9c7c20ec30c40688fcd8b2594a7326afa
+        checksum/jmx-config: 92e614e0952be1c323db5e885a5ee11da7d500cb1a3a0542f4d5a6ce6bc55f35
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5556"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "cp-kafka-rest"
+      initContainers:
+        - name: kafka-ready
+          image: "snappyflowml/kafka-zk-check:alpha"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - ./kafka-init.sh
+            - localhost:9092,localhost1:9092
+      containers:
+        - name: exporter
+          image: "solsson/kafka-prometheus-jmx-exporter@sha256:6f82e2b0464f50da8104acd7363fb9b995001ddff77d248379f8788e78946143"
+          imagePullPolicy: "IfNotPresent"
+          command:
+          - java
+          - -XX:+UnlockExperimentalVMOptions
+          - -XX:+UseCGroupMemoryLimitForHeap
+          - -XX:MaxRAMFraction=1
+          - -XshowSettings:vm
+          - -jar
+          - jmx_prometheus_httpserver.jar
+          - "5556"
+          - /etc/jmx-kafka-rest/jmx-kafka-rest-prometheus.yml
+          ports:
+          - containerPort: 5556
+          resources: 
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+          - name: jmx-config
+            mountPath: /etc/jmx-kafka-rest
+          - name: memory-util-logs
+            mountPath: /memory-util-logs
+        - name: server
+          image: "snappyflowml/sf-kafka-rest:6"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: rest-proxy
+              containerPort: 8082
+              protocol: TCP
+            - containerPort: 5555
+              name: jmx
+          startupProbe:
+            tcpSocket:
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 20
+            timeoutSeconds: 4
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8082
+              scheme: HTTP
+            initialDelaySeconds: 300
+            periodSeconds: 60
+            timeoutSeconds: 30
+            successThreshold: 1
+            failureThreshold: 3
+          resources: 
+            limits:
+              cpu: 500m
+              memory: 896Mi
+            requests:
+              cpu: 50m
+              memory: 600Mi
+          env:
+          - name: LOGARCH_AUTHENTICATOR_URL
+            value: "http://release-name-authenticator"
+          - name: KAFKAREST_LOG4J_OPTS
+            value: -Dlog4j.configuration=file:///etc/customlog4j/connect-log4j.properties
+          - name: KAFKA_REST_HOST_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: KAFKA_REST_BOOTSTRAP_SERVERS
+            value: localhost:9092,localhost1:9092
+          - name: KAFKA_REST_SCHEMA_REGISTRY_URL
+            value: http://release-name-cp-schema-registry:8081
+          - name: KAFKAREST_HEAP_OPTS
+            value: "-Xms210M -Xmx600M -XX:-EnableCPUMonitor -Xtune:virtualized -XX:+UseContainerSupport -XX:+CompactStrings -Xverbosegclog:/memory-util-logs/gc-logs/%seq.xml,5,20 -Xdump:system:defaults:file=/memory-util-logs/system-dumps/%seq.dmp -Xdump:heap:defaults:file=/memory-util-logs/heap-dumps/%seq.phd -Xdump:java:defaults:file=/memory-util-logs/java-dumps/%seq.txt -Xdump:system+heap+java"
+          - name: "KAFKA_REST_KAFKA_REST_RESOURCE_EXTENSION_CLASS"
+            value: "com.maplelabs.kafka.rest.auth.CustomAuthSecurityRestExtension"
+          - name: "KAFKA_REST_LISTENERS"
+            value: "https://0.0.0.0:8081,http://0.0.0.0:8082"
+          - name: "KAFKA_REST_MAX_REQUEST_SIZE"
+            value: "10485760"
+          - name: "KAFKA_REST_PRODUCER_RETRIES"
+            value: "5"
+          - name: KAFKAREST_JMX_PORT
+            value: "5555"
+          volumeMounts:
+          - name: connect-log4j-properties
+            mountPath: /etc/customlog4j
+          - name: memory-util-logs
+            mountPath: /memory-util-logs
+      imagePullSecrets:
+        - name: xxxx
+      volumes:
+      - name: jmx-config
+        configMap:
+          name: release-name-cp-kafka-rest-jmx-configmap
+      - name: connect-log4j-properties
+        configMap:
+          name: release-name-cp-kafka-rest-kafka-log
+      - name: memory-util-logs
+        emptyDir: {}
+---
+# Source: sf-datapath/charts/cp-schema-registry/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-cp-schema-registry
+  labels:
+    app: cp-schema-registry
+    chart: cp-schema-registry-0.1.1
+    release: release-name
+    heritage: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cp-schema-registry
+      release: release-name
+  template:
+    metadata:
+      labels:
+        app: cp-schema-registry
+        release: release-name
+        snappyflow/projectname: snappyflow-app
+        snappyflow/appname: sf-data-path
+        snappyflow/component: kafka
+      annotations:
+        checksum/config: e73f20e20b6758237f799773e513309e5077a56f3b49868c3f46f38c38a0d144
+        checksum/jmx-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        prometheus.io/scrape: "false"
+    spec:
+      initContainers:
+        - name: kafka-ready
+          image: "snappyflowml/kafka-zk-check:alpha"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - ./kafka-init.sh
+            - localhost:9092,localhost1:9092
+      containers:
+        - name: schema-generator
+          image: "snappyflowml/schema-generator:14"
+          imagePullPolicy: "IfNotPresent"
+          resources:
+
+            limits:
+              cpu: 100m
+              memory: 1Gi
+            requests:
+              cpu: 10m
+              memory: 256Mi
+          volumeMounts:
+          - name: schema-generator-config
+            mountPath: /opt
+        - name: server
+          image: "confluentinc/cp-schema-registry:6.0.1"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: schema-registry
+              containerPort: 8081
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8081
+              scheme: HTTP 
+            initialDelaySeconds: 300
+            periodSeconds: 60
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+          env:
+          - name: SCHEMA_REGISTRY_LOG4J_OPTS
+            value: -Dlog4j.configuration=file:///etc/customlog4j/connect-log4j.properties
+          - name: SCHEMA_REGISTRY_HOST_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: SCHEMA_REGISTRY_LISTENERS
+            value: http://0.0.0.0:8081
+          - name: SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS
+            value: localhost:9092,localhost1:9092
+          - name: SCHEMA_REGISTRY_KAFKASTORE_GROUP_ID
+            value: release-name
+          - name: SCHEMA_REGISTRY_MASTER_ELIGIBILITY
+            value: "true"
+          - name: SCHEMA_REGISTRY_HEAP_OPTS
+            value: "-Xms256M -Xmx512M -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:G1HeapRegionSize=1M -XX:MaxMetaspaceSize=100M -XX:MinMetaspaceFreeRatio=10 -XX:MaxMetaspaceFreeRatio=30 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30"
+          
+          - name: SCHEMA_REGISTRY_KAFKASTORE_INIT_TIMEOUT_MS
+            value: "300000"
+          
+          - name: JMX_PORT
+            value: "5555"
+          volumeMounts:
+          - name: connect-log4j-properties
+            mountPath: /etc/customlog4j
+      imagePullSecrets:
+        - name: xxxx
+      volumes:
+      - name: schema-generator-config
+        configMap:
+          name: release-name-cp-schema-registry-schema-generator-configmap
+      - name: connect-log4j-properties
+        configMap:
+          name: release-name-cp-schema-registry-kafka-log
+---
+# Source: sf-datapath/charts/sfk-interface/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-sfk-interface
+  labels:
+    helm.sh/chart: sfk-interface-0.1.1
+    release: release-name
+    app.kubernetes.io/name: sfk-interface
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sfk-interface
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      annotations:
+        checksum/config: dbfd04e0b47c07a2a829a32b28ed099cebb053cd26384f765d5fc9442d974f23
+      labels:
+        app.kubernetes.io/name: sfk-interface
+        app.kubernetes.io/instance: release-name
+        release: release-name
+        snappyflow/projectname: snappyflow-app
+        snappyflow/appname: sf-data-path
+    spec:
+      imagePullSecrets:
+        - name: xxxx
+      serviceAccountName: default
+      securityContext:
+        {}
+      initContainers:
+        - name: kafka-ready
+          image: "snappyflowml/kafka-zk-check:alpha"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - ./kafka-init.sh
+            - localhost:9092,localhost1:9092
+        - name: db-ready
+          image: "bitnami/postgresql:11.5.0-debian-9-r34"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - "until pg_isready -d postgresql://'archive':'archive123'@'release-name-postgresql':5432/'archival'; do sleep 3; done"
+      containers:
+        - name: "sfk-interface"
+          securityContext:
+            {}
+          image: "snappyflowml/sfk-interface:28"
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: release-name-sfk-interface-config
+              mountPath: "/etc/conf"
+              readOnly: true
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 10m
+              memory: 50Mi
+      volumes:
+        - name: release-name-sfk-interface-config
+          configMap:
+            name: release-name-sfk-interface-config
+---
+# Source: sf-datapath/charts/signatures-and-kafka-apis/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-signatures-and-kafka-apis
+  namespace: default
+  labels:
+    app.kubernetes.io/name: signatures-and-kafka-apis
+    helm.sh/chart: signatures-and-kafka-apis-0.1.1
+    app.kubernetes.io/instance: release-name
+    release: release-name
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: signatures-and-kafka-apis
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      annotations:
+        checksum/config: d5f254205a1184777970c9de74ff752f1341c04631111618baa42f1d14a8f89c
+      labels:
+        app.kubernetes.io/name: signatures-and-kafka-apis
+        app.kubernetes.io/instance: release-name
+        release: release-name
+        snappyflow/projectname: snappyflow-app
+        snappyflow/appname: sf-data-path
+    spec:
+      imagePullSecrets:
+        - name: xxxx
+      initContainers:
+        - name: db-ready
+          image: "bitnami/postgresql:11.5.0-debian-9-r34"
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - "until pg_isready -d postgresql://'archive':'archive123'@'release-name-postgresql':5432/'archival'; do sleep 3; done"
+      containers:
+        - name: signatures-and-kafka-apis
+          image: "snappyflowml/signatures:11"
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: archival
+            value: "true"
+          - name: BOOTSTRAP_SERVERS
+            value: "localhost:9092,localhost1:9092"
+          # TODO: This should be dynamically detected in order to apply quotas
+          - name: NUM_BOOTSTRAP_SERVERS
+            value: "3"
+          - name: QUOTA_BUFFER_PCNT
+            value: "5"
+          volumeMounts:
+          - name: config-volume
+            mountPath: /etc/conf
+          readinessProbe:
+            httpGet:
+              path: "/signatures/check"
+              port: 8888
+            timeoutSeconds: 10
+            initialDelaySeconds: 180
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: 200m
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 256Mi
+      volumes:
+        - name: config-volume
+          configMap:
+            name: release-name-signatures-and-kafka-apis
+---
+# Source: sf-datapath/charts/archival-kafka-connect/templates/hpa.yaml
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: release-name-archival-kafka-connect
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: release-name-archival-kafka-connect
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageValue: "850m"
+  - type: External
+    external:
+      metricName: kafka_bytesinpersec_oneminuterate_for_log_and_metric
+      targetAverageValue: 2315000
+---
+# Source: sf-datapath/charts/cp-kafka-rest/templates/hpa.yaml
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: release-name-cp-kafka-rest
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: release-name-cp-kafka-rest
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Pods
+    pods:
+      metricName: kafka_rest_heap_utilization_pcnt
+      targetAverageValue: 85
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageValue: 450m
+---
+# Source: sf-datapath/charts/es-kafka-connect/templates/hpa.yaml
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: release-name-es-kafka-connect
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: release-name-es-kafka-connect
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageValue: "850m"
+  - type: External
+    external:
+      metricName: kafka_bytesinpersec_oneminuterate
+      targetAverageValue: 2315000
+---
+# Source: sf-datapath/charts/archival-kafka-connect/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-archival-kafka-connect
+  labels:
+    app: archival-kafka-connect
+    chart: archival-kafka-connect-0.1.0
+    release: release-name
+    heritage: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: archival-kafka-connect
+      release: release-name
+  serviceName: release-name-archival-kafka-connect
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        app: archival-kafka-connect
+        release: release-name
+        snappyflow/projectname: snappyflow-app
+        snappyflow/appname: sf-data-path
+        snappyflow/component: kafka
+      annotations:
+        checksum/config: 43b4d34ccfc6ef5311d147e7fed2e06989a08587d67de2915a925356ef2c81a2
+        checksum/jmx-config: 7c17ff5eae6da80e617d392df70acb94262d134ca55bf8f9d6b3f1a3bb48ef42
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5556"
+    spec:
+      terminationGracePeriodSeconds: 200
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "es-kafka-connect"
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "archival-kafka-connect"
+      initContainers:
+        - name: kafka-ready
+          image: "snappyflowml/kafka-zk-check:alpha"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - ./kafka-init.sh
+            - localhost:9092,localhost1:9092
+      containers:
+        - name: exporter
+          image: "solsson/kafka-prometheus-jmx-exporter@sha256:6f82e2b0464f50da8104acd7363fb9b995001ddff77d248379f8788e78946143"
+          imagePullPolicy: "IfNotPresent"
+          command:
+          - java
+          - -XX:+UnlockExperimentalVMOptions
+          - -XX:+UseCGroupMemoryLimitForHeap
+          - -XX:MaxRAMFraction=1
+          - -XshowSettings:vm
+          - -jar
+          - jmx_prometheus_httpserver.jar
+          - "5556"
+          - /etc/jmx-kafka-connect/jmx-kafka-connect-prometheus.yml
+          ports:
+          - containerPort: 5556
+          resources: 
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+          - name: jmx-config
+            mountPath: /etc/jmx-kafka-connect
+          - name: memory-util-logs
+            mountPath: /memory-util-logs
+        - name: connector
+          image: "snappyflowml/arch-kafka-connect:20"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: arch-connect
+              containerPort: 8083
+              protocol: TCP
+            - containerPort: 5555
+              name: jmx
+          startupProbe:
+            tcpSocket:
+              port: 8083
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 20
+            timeoutSeconds: 9
+          livenessProbe:
+            httpGet:
+              path: /connectors
+              port: 8083
+              scheme: HTTP
+            initialDelaySeconds: 300
+            periodSeconds: 60
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          resources: 
+            limits:
+              cpu: "1"
+              memory: 3Gi
+            requests:
+              cpu: "1"
+              memory: 1536Mi
+          env:
+            - name: CONNECT_REST_ADVERTISED_HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: KAFKA_LOG4J_OPTS
+              value: -Dlog4j.configuration=file:///etc/customlog4j/connect-log4j.properties
+            - name: CONNECT_BOOTSTRAP_SERVERS
+              value: localhost:9092,localhost1:9092
+            - name: CONNECT_GROUP_ID
+              value: default-release-name-s3-connect
+            - name: CONNECT_CONFIG_STORAGE_TOPIC
+              value: default-release-name-s3-connect-config
+            - name: CONNECT_OFFSET_STORAGE_TOPIC
+              value: default-release-name-s3-connect-offset
+            - name: CONNECT_STATUS_STORAGE_TOPIC
+              value: default-release-name-s3-connect-status
+            - name: CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL
+              value: http://release-name-cp-schema-registry:8081
+            - name: CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL
+              value: http://release-name-cp-schema-registry:8081
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xms250M -Xmx1300M -Xmns200M -Xmnx800M -XX:MaxDirectMemorySize=100M -Xcodecachetotal50M -Xmso128K -Xgc:concurrentScavenge -XX:-EnableCPUMonitor -Xtune:virtualized -XX:+CompactStrings -Xverbosegclog:/memory-util-logs/gc-logs/%seq.xml,20,100 -Xdump:system:defaults:file=/memory-util-logs/system-dumps/%seq.dmp -Xdump:heap:defaults:file=/memory-util-logs/heap-dumps/%seq.phd -Xdump:java:defaults:file=/memory-util-logs/java-dumps/%seq.txt -Xdump:system+heap+java"
+            - name: "CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR"
+              value: "3"
+            - name: "CONNECT_CONNECT_PROTOCOL"
+              value: "apm_sessioned"
+            - name: "CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY"
+              value: "All"
+            - name: "CONNECT_CONSUMER_FETCH_MAX_BYTES"
+              value: "1048576"
+            - name: "CONNECT_CONSUMER_MAX_PARTITION_FETCH_BYTES"
+              value: "1048576"
+            - name: "CONNECT_CONSUMER_MAX_POLL_RECORDS"
+              value: "5000"
+            - name: "CONNECT_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY"
+              value: "org.apache.kafka.clients.consumer.RoundRobinAssignor"
+            - name: "CONNECT_INTERNAL_KEY_CONVERTER"
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: "CONNECT_INTERNAL_VALUE_CONVERTER"
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: "CONNECT_KEY_CONVERTER"
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: "CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE"
+              value: "false"
+            - name: "CONNECT_OFFSET_FLUSH_INTERVAL_MS"
+              value: "60000"
+            - name: "CONNECT_OFFSET_FLUSH_TIMEOUT_MS"
+              value: "45000"
+            - name: "CONNECT_OFFSET_STORAGE_PARTITIONS"
+              value: "3"
+            - name: "CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR"
+              value: "3"
+            - name: "CONNECT_PLUGIN_PATH"
+              value: "/usr/share/java,/etc/kafka-connect/custom_smt,/usr/share/confluent-hub-components"
+            - name: "CONNECT_SCHEDULED_REBALANCE_MAX_DELAY_MS"
+              value: "60000"
+            - name: "CONNECT_STATUS_STORAGE_PARTITIONS"
+              value: "3"
+            - name: "CONNECT_STATUS_STORAGE_REPLICATION_FACTOR"
+              value: "3"
+            - name: "CONNECT_TASK_SHUTDOWN_GRACEFUL_TIMEOUT_MS"
+              value: "180000"
+            - name: "CONNECT_VALUE_CONVERTER"
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: "CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE"
+              value: "false"
+            - name: KAFKA_JMX_PORT
+              value: "5555"
+          volumeMounts:
+          - name: connect-log4j-properties
+            mountPath: /etc/customlog4j
+          - name: memory-util-logs
+            mountPath: /memory-util-logs
+      imagePullSecrets:
+        - name: xxxx
+      volumes:
+      - name: jmx-config
+        configMap:
+          name: release-name-archival-kafka-connect-jmx-configmap
+      - name: connect-log4j-properties
+        configMap:
+          name: release-name-archival-kafka-connect-kafka-log
+      - name: memory-util-logs
+        emptyDir: {}
+---
+# Source: sf-datapath/charts/es-kafka-connect/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-es-kafka-connect
+  labels:
+    app: es-kafka-connect
+    chart: es-kafka-connect-0.1.2
+    release: release-name
+    heritage: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: es-kafka-connect
+      release: release-name
+  serviceName: release-name-es-kafka-connect
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        app: es-kafka-connect
+        release: release-name
+        snappyflow/projectname: snappyflow-app
+        snappyflow/appname: sf-data-path
+        snappyflow/component: kafka
+      annotations:
+        checksum/config: 0e934b3f1ef9efcf7b50217ff9941c2cf091903a757f23f3bfaa2677c3c62ef0
+        checksum/jmx-config: dd2f6556e7dfe6a973de80da9f30fac002db13390df2afab06deaa26e30112e3
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5556"
+    spec:
+      terminationGracePeriodSeconds: 200
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "archival-kafka-connect"
+          - weight: 2
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - "es-kafka-connect"
+      initContainers:
+        - name: kafka-ready
+          image: "snappyflowml/kafka-zk-check:alpha"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - ./kafka-init.sh
+            - localhost:9092,localhost1:9092
+      containers:
+        - name: exporter
+          image: "solsson/kafka-prometheus-jmx-exporter@sha256:6f82e2b0464f50da8104acd7363fb9b995001ddff77d248379f8788e78946143"
+          imagePullPolicy: "IfNotPresent"
+          command:
+          - java
+          - -XX:+UnlockExperimentalVMOptions
+          - -XX:+UseCGroupMemoryLimitForHeap
+          - -XX:MaxRAMFraction=1
+          - -XshowSettings:vm
+          - -jar
+          - jmx_prometheus_httpserver.jar
+          - "5556"
+          - /etc/jmx-kafka-connect/jmx-kafka-connect-prometheus.yml
+          ports:
+          - containerPort: 5556
+          resources: 
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+          - name: jmx-config
+            mountPath: /etc/jmx-kafka-connect
+          - name: memory-util-logs
+            mountPath: /memory-util-logs
+        - name: connector
+          image: "snappyflowml/apm-kafka-connect:20"
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: es-connect
+              containerPort: 8083
+              protocol: TCP
+            - containerPort: 5555
+              name: jmx
+          startupProbe:
+            tcpSocket:
+              port: 8083
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 20
+            timeoutSeconds: 9
+          livenessProbe:
+            httpGet:
+              path: /connectors
+              port: 8083
+              scheme: HTTP
+            initialDelaySeconds: 300
+            periodSeconds: 60
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          resources: 
+            limits:
+              cpu: "1"
+              memory: 4Gi
+            requests:
+              cpu: "1"
+              memory: 2560Mi
+          env:
+            - name: CONNECT_REST_ADVERTISED_HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: KAFKA_LOG4J_OPTS
+              value: -Dlog4j.configuration=file:///etc/customlog4j/connect-log4j.properties
+            - name: CONNECT_BOOTSTRAP_SERVERS
+              value: localhost:9093,localhost1:9093
+            - name: CONNECT_GROUP_ID
+              value: default-release-name-es-connect
+            - name: CONNECT_CONFIG_STORAGE_TOPIC
+              value: default-release-name-es-connect-config
+            - name: CONNECT_OFFSET_STORAGE_TOPIC
+              value: default-release-name-es-connect-offset
+            - name: CONNECT_STATUS_STORAGE_TOPIC
+              value: default-release-name-es-connect-status
+            - name: CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL
+              value: http://release-name-cp-schema-registry:8081
+            - name: CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL
+              value: http://release-name-cp-schema-registry:8081
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xms450M -Xmx1800M -Xmns350M -Xmnx1400M -XX:MaxDirectMemorySize=200M -Xcodecachetotal50M -Xmso128K -Xgc:concurrentScavenge -XX:-EnableCPUMonitor -Xtune:virtualized -XX:+CompactStrings -Xverbosegclog:/memory-util-logs/gc-logs/%seq.xml,20,100 -Xdump:system:defaults:file=/memory-util-logs/system-dumps/%seq.dmp -Xdump:heap:defaults:file=/memory-util-logs/heap-dumps/%seq.phd -Xdump:java:defaults:file=/memory-util-logs/java-dumps/%seq.txt -Xdump:system+heap+java"
+            - name: "CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR"
+              value: "3"
+            - name: "CONNECT_CONNECT_PROTOCOL"
+              value: "apm_sessioned"
+            - name: "CONNECT_CONNECTOR_CLIENT_CONFIG_OVERRIDE_POLICY"
+              value: "All"
+            - name: "CONNECT_CONSUMER_FETCH_MAX_BYTES"
+              value: "1048576"
+            - name: "CONNECT_CONSUMER_MAX_PARTITION_FETCH_BYTES"
+              value: "1048576"
+            - name: "CONNECT_CONSUMER_MAX_POLL_RECORDS"
+              value: "5000"
+            - name: "CONNECT_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY"
+              value: "org.apache.kafka.clients.consumer.RoundRobinAssignor"
+            - name: "CONNECT_CONSUMER_SASL_JAAS_CONFIG"
+              value: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"snp-kconnect\" password=\"snp-kconnect\";"
+            - name: "CONNECT_CONSUMER_SASL_MECHANISM"
+              value: "PLAIN"
+            - name: "CONNECT_CONSUMER_SECURITY_PROTOCOL"
+              value: "SASL_PLAINTEXT"
+            - name: "CONNECT_INTERNAL_KEY_CONVERTER"
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: "CONNECT_INTERNAL_VALUE_CONVERTER"
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: "CONNECT_KEY_CONVERTER"
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: "CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE"
+              value: "false"
+            - name: "CONNECT_OFFSET_FLUSH_INTERVAL_MS"
+              value: "60000"
+            - name: "CONNECT_OFFSET_FLUSH_TIMEOUT_MS"
+              value: "45000"
+            - name: "CONNECT_OFFSET_STORAGE_PARTITIONS"
+              value: "3"
+            - name: "CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR"
+              value: "3"
+            - name: "CONNECT_PLUGIN_PATH"
+              value: "/usr/share/java,/etc/kafka-connect/custom_smt,/usr/share/confluent-hub-components"
+            - name: "CONNECT_SASL_JAAS_CONFIG"
+              value: "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"snp-kconnect\" password=\"snp-kconnect\";"
+            - name: "CONNECT_SASL_MECHANISM"
+              value: "PLAIN"
+            - name: "CONNECT_SCHEDULED_REBALANCE_MAX_DELAY_MS"
+              value: "60000"
+            - name: "CONNECT_SECURITY_PROTOCOL"
+              value: "SASL_PLAINTEXT"
+            - name: "CONNECT_STATUS_STORAGE_PARTITIONS"
+              value: "3"
+            - name: "CONNECT_STATUS_STORAGE_REPLICATION_FACTOR"
+              value: "3"
+            - name: "CONNECT_TASK_SHUTDOWN_GRACEFUL_TIMEOUT_MS"
+              value: "180000"
+            - name: "CONNECT_VALUE_CONVERTER"
+              value: "org.apache.kafka.connect.json.JsonConverter"
+            - name: "CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE"
+              value: "false"
+            - name: KAFKA_JMX_PORT
+              value: "5555"
+          volumeMounts:
+          - name: connect-log4j-properties
+            mountPath: /etc/customlog4j
+          - name: memory-util-logs
+            mountPath: /memory-util-logs
+      imagePullSecrets:
+        - name: xxxx
+      volumes:
+      - name: jmx-config
+        configMap:
+          name: release-name-es-kafka-connect-jmx-configmap
+      - name: connect-log4j-properties
+        configMap:
+          name: release-name-es-kafka-connect-kafka-log
+      - name: memory-util-logs
+        emptyDir: {}
+---
+# Source: sf-datapath/charts/sfk-interface/templates/cron.yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: release-name-quota-util-stats
+  namespace: default
+  labels:
+    helm.sh/chart: sfk-interface-0.1.1
+    release: release-name
+    app.kubernetes.io/name: sfk-interface
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  concurrencyPolicy: Forbid
+  schedule: "*/30 * * * *"
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 1
+  startingDeadlineSeconds: 200
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            release: release-name
+        spec:
+          containers:
+          - name: main
+            image: snappyflowml/sfk-quota-stats:5
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - name: release-name-sfk-interface-config
+                mountPath: "/etc/conf"
+          restartPolicy: Never
+          volumes:
+            - name: release-name-sfk-interface-config
+              configMap:
+                name: release-name-sfk-interface-config
+---
+# Source: sf-datapath/charts/sfk-interface/templates/cron.yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: release-name-sinks-monitor
+  namespace: default
+  labels:
+    helm.sh/chart: sfk-interface-0.1.1
+    release: release-name
+    app.kubernetes.io/name: sfk-interface
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  concurrencyPolicy: Forbid
+  schedule: "*/15 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  startingDeadlineSeconds: 200
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            release: release-name
+        spec:
+          containers:
+          - name: main
+            image: snappyflowml/sink-monitor-consumer-groups:7
+            imagePullPolicy: IfNotPresent
+            command: ["bash"]
+            args: ["-c", "python app.py connect-es"]
+            volumeMounts:
+              - name: release-name-sfk-interface-config
+                mountPath: "/etc/config"
+          restartPolicy: Never
+          volumes:
+            - name: release-name-sfk-interface-config
+              configMap:
+                name: release-name-sfk-interface-config
+---
+# Source: sf-datapath/templates/system-migration.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-name-system-migration
+  namespace: default
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+    app.kubernetes.io/instance: "release-name"
+    helm.sh/chart: "sf-datapath-2.0.81"
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    metadata:
+      name: release-name-system-migraton
+      labels:
+        app.kubernetes.io/managed-by: "Helm"
+        app.kubernetes.io/instance: "release-name"
+        helm.sh/chart: "sf-datapath-2.0.81"
+        release: release-name
+        snappyflow/projectname: snappyflow-app
+        snappyflow/appname: sf-data-path
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: main
+        image: snappyflowml/datapath-system-migration:11
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: release-name-system-migration-config
+            mountPath: "/etc/conf"
+            readOnly: true
+      volumes:
+        - name: release-name-system-migration-config
+          configMap:
+            name: release-name-system-migration-config
