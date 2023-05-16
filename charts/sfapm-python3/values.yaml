@@ -57,7 +57,7 @@ sfapmui:
 
   image:
     repository: snappyflowml/sfapm-ui
-    tag: 3.1.441
+    tag: 3.1.444
     pullPolicy: IfNotPresent
 
   resources:
@@ -758,6 +758,7 @@ cloud:
 
 global:
   sfappname: sf-portal-app
+  sfdatapath_appname: sf-data-path
   sfprojectname: snappyflow-app
   sfappname_key: snappyflow/appname
   sfprojectname_key: snappyflow/projectname
