@@ -13,7 +13,7 @@ clusterDomain: cluster.local
 ##
 image:
   repository: snappyflowml/minio-gcs
-  tag: 'master-v1-2-55'
+  tag: debug
   pullPolicy: IfNotPresent
 
 ## minio server mode, i.e. standalone or distributed.
