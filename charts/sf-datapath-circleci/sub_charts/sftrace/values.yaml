@@ -2,6 +2,10 @@ enableDebug: false
 archiverEnabled: true
 nameOverride: ""
 fullnameOverride: ""
+image:
+  pullPolicy: IfNotPresent
+  repository: snappyflowml/sftrace-server
+  tag: '20'
 imagePullSecrets: []
 
 serviceAccount:

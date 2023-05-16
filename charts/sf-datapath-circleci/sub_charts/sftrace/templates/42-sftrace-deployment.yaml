@@ -52,8 +52,8 @@ spec:
             defaultMode: 0600
       containers:
       - name: sftrace-server
-        image: "snappyflowml/sftrace-server:latest"
-        imagePullPolicy: {{ .Values.sftrace.image.pullPolicy }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
           - name: http
             containerPort: 8200
