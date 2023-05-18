@@ -54,6 +54,6 @@ schemaGenerator:
 image:
   pullPolicy: IfNotPresent
   repository: snappyflowml/schema-generator
-  tag: 'master-v1-2-60'
+  tag: 'master-v1-2-61'
 servicePort: 8081
 tolerations: {}
