@@ -1,3 +1,7 @@
+# Default values for dataset-raw-controller.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
 affinity: {}
 appParams:
   competingConsumers: 2
@@ -26,23 +30,23 @@ containerResources:
 db:
   max_idle_connections: 1
   max_open_connections: 3
-fullnameOverride: ''
+fullnameOverride: ""
 image:
-  pullPolicy: IfNotPresent
   repository: snappyflowml/dataset-raw-controller
-  tag: '2'
-nameOverride: ''
+  pullPolicy: IfNotPresent
+  tag: 'master-2-0-86'
+nameOverride: ""
 nodeSelector: {}
 podAnnotations:
   prometheus.io/path: /metrics
-  prometheus.io/port: '9000'
-  prometheus.io/scrape: 'true'
+  prometheus.io/port: "9000"
+  prometheus.io/scrape: "true"
 podSecurityContext: {}
 replicaCount: 1
 schedules:
-  detect_raw_time_buckets: 0 * * * *
-  process_raw_data: 0 1 * * *
-  raw_version_compacted: 0 5 * * *
+  detect_raw_time_buckets: '0 * * * *'
+  process_raw_data: '0 1 * * *'
+  raw_version_compacted: '0 5 * * *'
 securityContext: {}
 serverPort: :5002
 service:
