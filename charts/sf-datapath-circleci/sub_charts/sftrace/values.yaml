@@ -5,7 +5,7 @@ fullnameOverride: ""
 image:
   pullPolicy: IfNotPresent
   repository: snappyflowml/sftrace-server
-  tag: 'v1-2-61'
+  tag: 'v1-2-65'
 imagePullSecrets: []
 
 serviceAccount:
